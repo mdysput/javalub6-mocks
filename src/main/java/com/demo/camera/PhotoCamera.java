@@ -5,12 +5,13 @@ public class PhotoCamera implements WriteListener {
     private boolean isOn = false;
     private final ImageSensor sensor;
     private final Card card;
+    private boolean savingInProgress = false;
+    private boolean powerButtonPressed = false;
 
-    public PhotoCamera(ImageSensor sensor, Card card) {
+    PhotoCamera(ImageSensor sensor, Card card) {
         this.sensor= sensor;
         this.card = card;
     }
-
 
     public boolean isOn(){
         return isOn;
@@ -28,23 +29,29 @@ public class PhotoCamera implements WriteListener {
 
     public void pressButton() {
         if(isOn){
-            //sensor.read();
-            card.write(sensor.read());
+            byte[] image = sensor.read();
+            savingInProgress = true;
+            card.write(image);
         }
     }
-
     public void powerButton(){
-        if(isOn){
+        if(isOn && !savingInProgress){
             turnOff();
         }
-        else{
+        else if(!isOn){
             turnOn();
+            powerButtonPressed = false;
+        }
+        else{
+            powerButtonPressed = true;
         }
     }
-
     @Override
     public void writeCompleted() {
-
+        savingInProgress = false;
+        if(powerButtonPressed){
+            powerButton();
+        }
     }
 }
 
